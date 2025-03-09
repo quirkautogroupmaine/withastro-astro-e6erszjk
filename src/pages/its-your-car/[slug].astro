@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import { supabase } from '../../lib/supabase';
 import IYCEmployees from '../../components/iyc/IYCEmployees.astro';
 import IYCLocation from '../../components/iyc/IYCLocation.astro';
+import IYCRecent from '../../components/iyc/IYCRecent.astro';
 
 // Keep SSR enabled but pre-generate the 1,000 most recent posts
 export const prerender = false;
@@ -64,7 +65,7 @@ console.log('Featured Image URL:', post.featured_image_url);
     <div class="relative">
       <div class="absolute inset-0">
         <img 
-          src={post.location_featured_image || 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&q=80'}
+          src={post.quirk_location_featured_image || 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&q=80'}
           alt={post.quirk_location_title}
           class="w-full h-full object-cover"
           loading="eager"
@@ -154,6 +155,11 @@ console.log('Featured Image URL:', post.featured_image_url);
         <div class="prose prose-lg max-w-none mx-auto bg-white rounded-lg shadow-lg p-8">
           <div set:html={post.enhanced_content} />
         </div>
+      )}
+
+      {/* Recent Posts Section */}
+      {post.quirk_location_id && (
+        <IYCRecent locationId={post.quirk_location_id} currentPostId={post.id} />
       )}
     </div>
   </article>
