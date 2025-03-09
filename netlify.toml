@@ -14,12 +14,18 @@
   status = 200
   force = true
 
-# ✅ Ensure SSR pages work (fixes 404s for dynamic routes)
+# ✅ Ensure SSR Pages Load Properly
+[[redirects]]
+  from = "/ssr/*"
+  to = "/.netlify/functions/entrypoint"
+  status = 200
+  force = false
+
+# ✅ Ensure Netlify Serves Static Pages Properly
 [[redirects]]
   from = "/*"
-  to = "/"
+  to = "/:splat"
   status = 200
-  force = true
 
 # ✅ Optimize Netlify Functions
 [functions]
