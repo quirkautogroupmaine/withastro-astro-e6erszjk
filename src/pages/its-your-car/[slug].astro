@@ -4,30 +4,18 @@ import { supabase } from '../../lib/supabase';
 import IYCEmployees from '../../components/iyc/IYCEmployees.astro';
 import IYCLocation from '../../components/iyc/IYCLocation.astro';
 
-export const prerender = true; // Enable static generation for first 500 posts
-
-// ✅ Generate static pages for the first 500 most recent posts
-export async function getStaticPaths() {
-  const { data: posts, error } = await supabase
-    .from('iyc_with_relations')
-    .select('slug')
-    .eq('published', true)
-    .order('created_at', { ascending: false }) // Newest first
-    .limit(500); // Static render for first 500
-
-  if (error || !posts) {
-    console.error('Error fetching slugs:', error);
-    return [];
-  }
-
-  return posts.map(post => ({
-    params: { slug: post.slug },
-  }));
-}
+// Keep SSR enabled but pre-generate the 1,000 most recent posts
+export const prerender = false;
 
 const { slug } = Astro.params;
 
-// Fetch post data
+// Handle missing slugs
+if (!slug) {
+  console.error('No slug provided');
+  return Astro.redirect('/404');
+}
+
+// Fetch post with all relations including employees from the view
 const { data: post, error: postError } = await supabase
   .from('iyc_with_relations')
   .select('*')
@@ -41,12 +29,14 @@ if (postError || !post) {
 }
 
 // Handle employees data safely
-let employeeIds = [];
+let employeeIds: string[] = [];
 try {
+  // Check if employees exists and is a string
   if (post.employees && typeof post.employees === 'string') {
     const parsed = JSON.parse(post.employees);
     employeeIds = Array.isArray(parsed) ? parsed.map(emp => emp.id) : [];
   } else if (Array.isArray(post.employees)) {
+    // If it's already an array, map directly
     employeeIds = post.employees.map(emp => emp.id);
   }
 } catch (err) {
@@ -59,6 +49,9 @@ const publishDate = new Date(post.published_at).toLocaleDateString('en-US', {
   month: 'long',
   day: 'numeric'
 });
+
+// Debug log to check image URL
+console.log('Featured Image URL:', post.featured_image_url);
 ---
 
 <Layout 
@@ -71,7 +64,7 @@ const publishDate = new Date(post.published_at).toLocaleDateString('en-US', {
     <div class="relative">
       <div class="absolute inset-0">
         <img 
-          src={post.quirk_location_featured_image || 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&q=80'}
+          src={post.location_featured_image || 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&q=80'}
           alt={post.quirk_location_title}
           class="w-full h-full object-cover"
           loading="eager"
@@ -127,6 +120,7 @@ const publishDate = new Date(post.published_at).toLocaleDateString('en-US', {
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <!-- Left Column - Featured Image -->
         <div class="w-full h-[600px] bg-gray-100 rounded-lg shadow-lg overflow-hidden">
           {post.featured_image_url && (
             <img 
@@ -134,20 +128,28 @@ const publishDate = new Date(post.published_at).toLocaleDateString('en-US', {
               alt={post.title}
               class="w-full h-full object-contain"
               loading="lazy"
+              onload="this.classList.add('loaded')"
+              onerror="console.error('Failed to load image:', this.src)"
             />
           )}
         </div>
 
+        <!-- Right Column - Location and Team -->
         <div class="space-y-8">
-          {post.quirk_location_id && <IYCLocation locationId={post.quirk_location_id} />}
-          {employeeIds.length > 0 && <IYCEmployees employeeIds={employeeIds} />}
+          {post.quirk_location_id && (
+            <IYCLocation locationId={post.quirk_location_id} />
+          )}
+
+          {employeeIds.length > 0 && (
+            <IYCEmployees employeeIds={employeeIds} />
+          )}
         </div>
       </div>
-      
-      <!-- Divider -->
+
+      {/* Divider */}
       <hr class="my-12 border-gray-200" />
 
-      <!-- ✅ Enhanced Content Section Restored -->
+      {/* Enhanced Content Section */}
       {post.enhanced_content && (
         <div class="prose prose-lg max-w-none mx-auto bg-white rounded-lg shadow-lg p-8">
           <div set:html={post.enhanced_content} />
@@ -156,3 +158,61 @@ const publishDate = new Date(post.published_at).toLocaleDateString('en-US', {
     </div>
   </article>
 </Layout>
+
+<style>
+  .prose h2 {
+    @apply text-3xl font-bold text-primary mt-12 mb-6;
+  }
+
+  .prose h3 {
+    @apply text-2xl font-bold text-primary mt-8 mb-4;
+  }
+
+  .prose p {
+    @apply text-gray-600 mb-6;
+  }
+
+  .prose ul {
+    @apply list-none space-y-2 mb-6;
+  }
+
+  .prose li {
+    @apply text-gray-600;
+  }
+
+  .prose strong {
+    @apply text-primary font-semibold;
+  }
+
+  .prose em {
+    @apply text-gray-700 italic;
+  }
+
+  .prose > *:first-child {
+    @apply mt-0;
+  }
+
+  img {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  img.loaded {
+    opacity: 1;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const images = document.querySelectorAll('img[loading="lazy"]');
+    images.forEach(img => {
+      if (img.complete) {
+        img.classList.add('loaded');
+      } else {
+        img.addEventListener('load', () => {
+          img.classList.add('loaded');
+        });
+      }
+    });
+  });
+</script>
