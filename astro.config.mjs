@@ -7,7 +7,7 @@ export default defineConfig({
   integrations: [tailwind(), react()],
   output: 'server', // ✅ Ensures SSR instead of static
   adapter: netlify({
-    functionPerRoute: true, // ✅ Keep this
+    functionPerRoute: true, // ✅ Ensures separate functions per route
   }),
   build: {
     inlineStylesheets: 'auto',
@@ -18,4 +18,3 @@ export default defineConfig({
     },
   },
 });
-// Send to Github. Send Now.
