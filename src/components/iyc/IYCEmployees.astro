@@ -1,0 +1,153 @@
+---
+import { supabase } from '../../lib/supabase';
+
+interface Props {
+  employeeIds: string[];
+}
+
+const { employeeIds } = Astro.props;
+
+// Fetch employees from database using the provided IDs
+const { data: employees, error } = await supabase
+  .from('quirk_employees')
+  .select(`
+    id,
+    employee_first_name,
+    employee_lastname,
+    employee_job_title,
+    employee_phone,
+    employee_email,
+    employee_photo
+  `)
+  .in('id', employeeIds);
+
+if (error) {
+  console.error('Error fetching employees:', error);
+}
+
+const hasEmployees = employees && employees.length > 0;
+---
+
+{hasEmployees && (
+  <div class="bg-white p-6 rounded-lg shadow-md mb-8 w-full">
+    <h2 class="text-xl font-bold text-primary mb-6 text-center">Your Quirk Team</h2>
+    <div class={`grid gap-6 ${
+      employees.length === 1 ? 'max-w-sm' : 
+      employees.length === 2 ? 'max-w-2xl grid-cols-2' : 
+      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+    } mx-auto`}>
+      {employees.map((employee) => (
+        <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
+          <div class="flex flex-col items-center text-center">
+            {employee.employee_photo ? (
+              <img 
+                src={employee.employee_photo}
+                alt={`${employee.employee_first_name} ${employee.employee_lastname}`}
+                class="w-24 h-24 rounded-full object-cover mb-4"
+                loading="lazy"
+              />
+            ) : (
+              <div class="w-24 h-24 rounded-full bg-primary flex items-center justify-center mb-4">
+                <span class="text-3xl font-bold text-white">
+                  {employee.employee_first_name[0]}{employee.employee_lastname[0]}
+                </span>
+              </div>
+            )}
+            
+            <h3 class="text-lg font-bold text-primary mb-1">
+              {employee.employee_first_name} {employee.employee_lastname}
+            </h3>
+            
+            {employee.employee_job_title && (
+              <p class="text-gray-600 mb-4">{employee.employee_job_title}</p>
+            )}
+
+            <div class="flex flex-col gap-3 w-full">
+              {employee.employee_phone && (
+                <a 
+                  href={`tel:${employee.employee_phone.replace(/\D/g, '')}`}
+                  class="inline-flex items-center justify-center text-secondary hover:text-primary transition-colors"
+                >
+                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  {employee.employee_phone}
+                </a>
+              )}
+
+              {employee.employee_email && (
+                <a 
+                  href={`mailto:${employee.employee_email}`}
+                  class="inline-flex items-center justify-center text-secondary hover:text-primary transition-colors"
+                >
+                  <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {employee.employee_email}
+                </a>
+              )}
+
+              <a 
+                href={`/contact/${employee.id}`}
+                class="inline-flex items-center justify-center px-4 py-2 bg-secondary text-white rounded-md hover:bg-secondary-light transition-colors mt-2 group"
+              >
+                Contact {employee.employee_first_name}
+                <svg 
+                  class="ml-2 w-4 h-4 transform transition-transform duration-300 group-hover:translate-x-1" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+<style>
+  /* Smooth transitions */
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  /* Image loading */
+  img {
+    transition: opacity 0.3s ease;
+  }
+
+  img[loading] {
+    opacity: 0;
+  }
+
+  img.loaded {
+    opacity: 1;
+  }
+
+  /* Mobile optimizations */
+  @media (max-width: 640px) {
+    .contact-info {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+</style>
+
+<script>
+  // Handle image loading
+  document.addEventListener('DOMContentLoaded', () => {
+    const images = document.querySelectorAll('img[loading="lazy"]');
+    images.forEach(img => {
+      img.addEventListener('load', () => {
+        img.classList.add('loaded');
+      });
+    });
+  });
+</script>
+---

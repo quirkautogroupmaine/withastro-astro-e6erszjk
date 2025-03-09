@@ -1,0 +1,141 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+import JobFilters from '../components/JobFilters';
+import JobListing from '../components/careers/JobListing.astro';
+
+// Enable static generation for this page
+export const prerender = true;
+
+// ✅ Get URL search parameters correctly
+const url = new URL(Astro.url);
+const locationId = url.searchParams.get('locationId') || '';
+const department = url.searchParams.get('department') || '';
+const city = url.searchParams.get('city') || '';
+
+// ✅ Build Supabase query dynamically
+let query = supabase
+  .from('jobs')
+  .select(`
+    id,
+    title,
+    department,
+    description,
+    enhanced_job_description,
+    employment_type,
+    application_url,
+    content_type_postrank,
+    quirk_location:quirk_locations(
+      id,
+      title,
+      slug,
+      city,
+      location_logo,
+      location_featured_image
+    )
+  `)
+  .eq('is_active', true);
+
+// ✅ Apply filters dynamically
+if (locationId) query = query.eq('quirk_location_id', locationId);
+if (department) query = query.ilike('department', `%${department}%`);
+if (city) query = query.ilike('quirk_location.city', `%${city}%`);
+
+// ✅ Sort by post rank
+query = query.order('content_type_postrank', { ascending: true });
+
+// ✅ Fetch data
+const [{ data: jobs }, { data: departments }, { data: locations }] = await Promise.all([
+  query,
+  supabase.from('jobs').select('department').not('department', 'is', null).eq('is_active', true),
+  supabase.from('quirk_locations').select('id, title, city').order('title')
+]);
+
+// ✅ Extract unique filter values
+const uniqueDepartments = [...new Set(departments?.map(job => job.department).filter(Boolean))];
+const uniqueCities = [...new Set(locations?.map(loc => loc.city).filter(Boolean))];
+
+// ✅ Prepare initial filter values for JobFilters component
+const initialFilters = { department, city, locationId };
+---
+
+<Layout title="Careers">
+  <div class="min-h-screen bg-gray-100">
+    <!-- Hero Section -->
+    <div class="relative">
+      <div class="absolute inset-0">
+        <img 
+          src="https://images.unsplash.com/photo-1552581234-26160f608093?auto=format&fit=crop&q=80" 
+          alt="Team collaboration" 
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 bg-primary opacity-80"></div>
+      </div>
+      <div class="relative max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8">
+        <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">Join Our Team</h1>
+        <p class="mt-6 text-xl text-white max-w-3xl">
+          As one of Maine's largest privately-owned employers, we offer exceptional career opportunities and a supportive work environment where you can thrive.
+        </p>
+      </div>
+    </div>
+
+    <!-- Job Filters -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <JobFilters 
+        client:load
+        departments={uniqueDepartments}
+        cities={uniqueCities}
+        locations={locations || []}
+        initialFilters={initialFilters}
+        onFilterChange={(filters) => {
+          window.handleFilterChange(filters);
+        }}
+      />
+    </div>
+
+    <!-- Job Listings -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <JobListing 
+        jobs={jobs || []}
+        departments={uniqueDepartments}
+        cities={uniqueCities}
+        locations={locations || []}
+        initialFilters={initialFilters}
+      />
+    </div>
+  </div>
+</Layout>
+
+<!-- ✅ JavaScript to update URL parameters on filter selection -->
+<script>
+  window.handleFilterChange = (filters) => {
+    const params = new URLSearchParams(window.location.search);
+
+    // ✅ Update filters in URL
+    if (filters.department) params.set('department', filters.department);
+    else params.delete('department');
+
+    if (filters.locationId) params.set('locationId', filters.locationId);
+    else params.delete('locationId');
+
+    if (filters.city) params.set('city', filters.city);
+    else params.delete('city');
+
+    // ✅ Update browser history (no page reload)
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.pushState({}, '', newUrl);
+
+    // ✅ Reload page to fetch filtered data
+    location.reload();
+  };
+</script>
+
+<style>
+  /* ✅ Truncate Job Descriptions */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>

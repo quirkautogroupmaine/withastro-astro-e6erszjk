@@ -1,0 +1,35 @@
+---
+const pathname = Astro.url.pathname;
+
+const navItems = [
+  { href: '/cms/dashboard', label: 'Overview' },
+  { href: '/cms/posts', label: 'Posts' },
+  { href: '/cms/iyc', label: "IYC" },
+  { href: '/cms/jobs', label: 'Jobs' },
+  { href: '/cms/locations', label: 'Cities' },
+  { href: '/cms/quirk-locations', label: 'Quirk Locations' },
+  { href: '/cms/organizations', label: 'Organizations' },
+  { href: '/cms/categories', label: 'Categories' },
+  { href: '/cms/subcategories', label: 'Subcategories' },
+  { href: '/cms/sync', label: 'Sync' }
+];
+---
+
+<nav class="bg-white border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex overflow-x-auto">
+      {navItems.map((item) => (
+        <a
+          href={item.href}
+          class={`inline-flex items-center px-4 py-2 border-b-2 text-sm font-medium whitespace-nowrap ${
+            pathname === item.href
+              ? 'border-primary text-primary'
+              : 'border-transparent text-gray-500 hover:text-primary hover:border-gray-300'
+          }`}
+        >
+          {item.label}
+        </a>
+      ))}
+    </div>
+  </div>
+</nav>

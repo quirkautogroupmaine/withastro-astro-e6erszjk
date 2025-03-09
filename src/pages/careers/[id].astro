@@ -1,0 +1,343 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Enable static generation for this page
+export const prerender = true;
+
+// 🔹 Generate static paths for all active job listings
+export async function getStaticPaths() {
+  const { data: jobs } = await supabase
+    .from('jobs')
+    .select('id')
+    .eq('is_active', true);
+
+  return jobs
+    ? jobs.map((job) => ({ params: { id: job.id.toString() } }))
+    : [];
+}
+
+const { id } = Astro.params;
+
+// Redirect if no ID
+if (!id) {
+  return Astro.redirect('/careers');
+}
+
+// Fetch job details
+const { data: job } = await supabase
+  .from('jobs')
+  .select(`
+    *,
+    quirk_location:quirk_locations(
+      id,
+      title,
+      city,
+      state,
+      physical_address,
+      zip_code,
+      location_logo,
+      location_featured_image,
+      slug
+    )
+  `)
+  .eq('id', id)
+  .eq('is_active', true)
+  .single();
+
+// Redirect if job not found
+if (!job) {
+  return Astro.redirect('/careers');
+}
+
+// Fetch similar jobs
+const { data: similarJobs = [] } = await supabase
+  .from('jobs')
+  .select(`
+    id,
+    title,
+    quirk_location:quirk_locations(
+      id,
+      title
+    )
+  `)
+  .eq('is_active', true)
+  .eq('department', job.department)
+  .neq('id', job.id)
+  .limit(3);
+
+const defaultDescription = "Join our team at Quirk Auto Group! This position offers competitive benefits, a great work environment, and opportunities for growth.";
+
+// Generate structured data for Google Jobs
+const jobPostingSchema = {
+  "@context": "https://schema.org/",
+  "@type": "JobPosting",
+  "title": job.title,
+  "description": job.enhanced_job_description || job.description || defaultDescription,
+  "datePosted": job.created_at,
+  "validThrough": job.valid_through || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  "employmentType": job.employment_type,
+  "hiringOrganization": {
+    "@type": "Organization",
+    "name": "Quirk Auto Group",
+    "sameAs": "https://quirkauto.com",
+    "logo": "https://quirkauto.com/logo.png"
+  },
+  "jobLocation": {
+    "@type": "Place",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": job.quirk_location.physical_address,
+      "addressLocality": job.quirk_location.city,
+      "addressRegion": job.quirk_location.state,
+      "postalCode": job.quirk_location.zip_code,
+      "addressCountry": "US"
+    }
+  },
+  "baseSalary": {
+    "@type": "MonetaryAmount",
+    "currency": "USD",
+    "value": {
+      "@type": "QuantitativeValue",
+      "minValue": job.salary_min || 30000,
+      "maxValue": job.salary_max || 100000,
+      "unitText": "YEAR"
+    }
+  },
+  "benefits": [
+    {
+      "@type": "JobBenefit",
+      "value": "Health Insurance"
+    },
+    {
+      "@type": "JobBenefit",
+      "value": "401(k) with Company Match"
+    },
+    {
+      "@type": "JobBenefit",
+      "value": "Paid Time Off"
+    },
+    {
+      "@type": "JobBenefit",
+      "value": "Professional Development"
+    }
+  ],
+  "industry": "Automotive",
+  "occupationalCategory": job.department || "Automotive",
+  "experienceRequirements": job.experience_requirements || "Entry level to experienced professionals welcome",
+  "qualifications": job.qualifications || "Valid driver's license required",
+  "skills": job.required_skills?.split(',') || [],
+  "jobBenefits": [
+    "Health insurance",
+    "Dental insurance",
+    "Vision insurance",
+    "401(k) retirement plan",
+    "Paid time off",
+    "Professional development opportunities",
+    "Employee discounts"
+  ]
+};
+
+// Meta description
+const metaDescription = `Join ${job.quirk_location.title} as a ${job.title}. We offer competitive benefits, growth opportunities, and a great work environment in ${job.quirk_location.city}, Maine. Apply now!`;
+
+// Meta title
+const metaTitle = `${job.title} at ${job.quirk_location.title} | Quirk Auto Group Careers`;
+---
+
+<Layout 
+  title={metaTitle}
+  description={metaDescription}
+  image={job.quirk_location.location_featured_image}
+>
+  {/* Add structured data */}
+  <script type="application/ld+json" set:html={JSON.stringify(jobPostingSchema)} />
+
+  <article class="bg-gray-50">
+    <!-- Hero Section -->
+    <div class="relative">
+      <div class="absolute inset-0">
+        <img 
+          src={job.quirk_location?.location_featured_image || "https://images.unsplash.com/photo-1552581234-26160f608093?auto=format&fit=crop&q=80"}
+          alt={`Career opportunities at ${job.quirk_location?.title}`}
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
+      </div>
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div class="flex flex-col sm:flex-row items-start gap-8">
+          {job.quirk_location?.location_logo && (
+            <div class="flex-shrink-0">
+              <img 
+                src={job.quirk_location.location_logo}
+                alt={`${job.quirk_location.title} logo`}
+                class="h-24 sm:h-32 bg-white rounded-lg p-2"
+              />
+            </div>
+          )}
+          <div>
+            <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl mb-4">
+              {job.title}
+            </h1>
+            {job.quirk_location && (
+              <div>
+                <p class="text-xl text-white mb-2">
+                  {job.quirk_location.title}
+                </p>
+                <p class="text-lg text-white/90">
+                  {job.quirk_location.physical_address}<br />
+                  {job.quirk_location.city}, {job.quirk_location.state} {job.quirk_location.zip_code}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Job Details -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Job Description -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-lg shadow-lg overflow-hidden p-6">
+            <h2 class="text-2xl font-bold text-primary mb-4">About the Position</h2>
+            <div class="prose prose-lg max-w-none">
+              {job.enhanced_job_description ? (
+                <div set:html={job.enhanced_job_description} />
+              ) : (
+                <p>{job.description || defaultDescription}</p>
+              )}
+            </div>
+
+            {/* Benefits Section */}
+            <div class="mt-8">
+              <h3 class="text-xl font-bold text-primary mb-4">Benefits</h3>
+              <ul class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <li class="flex items-center text-gray-600">
+                  <svg class="w-5 h-5 text-secondary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Health Insurance
+                </li>
+                <li class="flex items-center text-gray-600">
+                  <svg class="w-5 h-5 text-secondary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  401(k) with Company Match
+                </li>
+                <li class="flex items-center text-gray-600">
+                  <svg class="w-5 h-5 text-secondary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Paid Time Off
+                </li>
+                <li class="flex items-center text-gray-600">
+                  <svg class="w-5 h-5 text-secondary mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Professional Development
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-8">
+          <div class="bg-white rounded-lg shadow-lg overflow-hidden p-6">
+            <h2 class="text-lg font-semibold text-primary mb-4">Job Details</h2>
+            <dl class="space-y-4">
+              {job.employment_type && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Employment Type</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{job.employment_type}</dd>
+                </div>
+              )}
+              {job.department && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Department</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{job.department}</dd>
+                </div>
+              )}
+              {job.quirk_location && (
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Location</dt>
+                  <dd class="mt-1 text-sm text-gray-900">
+                    {job.quirk_location.title}<br />
+                    {job.quirk_location.physical_address}<br />
+                    {job.quirk_location.city}, {job.quirk_location.state} {job.quirk_location.zip_code}
+                  </dd>
+                </div>
+              )}
+            </dl>
+
+            {/* Apply Button */}
+            <div class="mt-6">
+              <a
+                href={job.application_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="block w-full px-4 py-2 text-center bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+              >
+                Apply Now
+              </a>
+            </div>
+          </div>
+
+          {similarJobs.length > 0 && (
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden p-6">
+              <h2 class="text-lg font-semibold text-primary mb-4">Similar Positions</h2>
+              <ul class="space-y-3">
+                {similarJobs.map((similar) => (
+                  <li>
+                    <a 
+                      href={`/careers/${similar.id}`}
+                      class="text-primary hover:text-secondary transition-colors block"
+                    >
+                      {similar.title}
+                      {similar.quirk_location?.title && (
+                        <span class="text-sm text-gray-500 block">
+                          {similar.quirk_location.title}
+                        </span>
+                      )}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  /* Style the HTML content */
+  .prose h2 {
+    @apply text-3xl font-bold text-primary mt-12 mb-6;
+  }
+  .prose h3 {
+    @apply text-2xl font-bold text-primary mt-8 mb-4;
+  }
+  .prose p {
+    @apply text-gray-600 mb-6;
+  }
+  .prose ul {
+    @apply list-none space-y-2 mb-6;
+  }
+  .prose li {
+    @apply text-gray-600;
+  }
+  .prose strong {
+    @apply text-primary font-semibold;
+  }
+  .prose em {
+    @apply text-gray-700 italic;
+  }
+  .prose > *:first-child {
+    @apply mt-0;
+  }
+</style>
+```

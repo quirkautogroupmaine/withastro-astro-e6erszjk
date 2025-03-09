@@ -1,0 +1,131 @@
+---
+interface Props {
+  locationId: string;
+  title: string;
+}
+
+const { locationId, title } = Astro.props;
+
+import { supabase } from '../../lib/supabase';
+
+// Fetch recent sponsorship and donation posts
+const { data: posts, error } = await supabase
+  .from('posts')
+  .select(`
+    *,
+    categories:post_categories(
+      category:categories(name, slug)
+    )
+  `)
+  .eq('quirk_location_id', locationId)
+  .eq('published', true)
+  .in('post_categories.category.slug', ['sponsorship', 'donation'])
+  .order('published_at', { ascending: false })
+  .limit(10);
+
+if (error) {
+  console.error('Error fetching local impact posts:', error);
+}
+
+const hasContent = posts && posts.length > 0;
+
+// Function to truncate text at word boundary
+function truncateText(text: string, maxLength: number = 200): string {
+  if (!text || text.length <= maxLength) return text;
+  const truncated = text.slice(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return lastSpace > 0 ? truncated.slice(0, lastSpace) + '...' : truncated + '...';
+}
+---
+
+{hasContent ? (
+  <div class="bg-white rounded-lg shadow-lg p-8 mb-12">
+    <div class="text-center mb-8">
+      <h2 class="text-2xl font-bold text-primary mb-4">Local Impact</h2>
+      <p class="text-gray-600">
+        See how {title} is making a difference in our community through sponsorships and donations.
+      </p>
+    </div>
+
+    <div class="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+      {posts.map((post) => (
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+          <a href={`/posts/${post.slug}`} class="block">
+            <img 
+              src={post.featured_image_url}
+              alt={post.title}
+              class="w-full h-48 object-cover hover:opacity-90 transition-opacity"
+              loading="lazy"
+            />
+          </a>
+          <div class="p-4">
+            <div class="flex flex-wrap gap-2 mb-3">
+              {post.categories?.map((cat) => (
+                cat?.category?.name && (
+                  <span class={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    cat.category.slug === 'sponsorship' 
+                      ? 'bg-primary text-white' 
+                      : 'bg-secondary text-white'
+                  }`}>
+                    {cat.category.name}
+                  </span>
+                )
+              ))}
+            </div>
+            <h3 class="text-lg font-bold text-primary mb-2 line-clamp-2">
+              <a href={`/posts/${post.slug}`} class="hover:text-secondary transition-colors">
+                {post.title}
+              </a>
+            </h3>
+            {post.excerpt && (
+              <p class="text-gray-600 text-sm mb-3 line-clamp-3">
+                {truncateText(post.excerpt)}
+              </p>
+            )}
+            <div class="flex items-center justify-between">
+              <time class="text-xs text-gray-500">
+                {new Date(post.published_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </time>
+              <a 
+                href={`/posts/${post.slug}`} 
+                class="inline-flex items-center text-sm font-medium text-secondary hover:text-primary transition-colors group"
+              >
+                Read more
+                <svg class="ml-1 w-4 h-4 transform transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div class="text-center mt-8">
+      <a 
+        href="/sponsorships" 
+        class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-secondary hover:bg-secondary-light transition-all duration-300"
+      >
+        View All Community Support
+        <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+    </div>
+  </div>
+) : (
+  <div class="bg-gray-50 py-16 -mx-4 sm:-mx-6 lg:-mx-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h2 class="text-3xl font-bold text-primary mb-4">Local Impact</h2>
+        <p class="text-lg text-gray-600">
+          No community support posts found for {title}. Check back soon to see how we're making a difference!
+        </p>
+      </div>
+    </div>
+  </div>
+)}

@@ -1,0 +1,16 @@
+[build]
+  command = "npm run build"
+  functions = "netlify/functions" # Ensures SSR works
+  edge_functions = "netlify/edge-functions"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Route all requests to SSR function
+[[redirects]]
+  from = "/*"
+  to = "/.netlify/functions/entrypoint"
+  status = 200

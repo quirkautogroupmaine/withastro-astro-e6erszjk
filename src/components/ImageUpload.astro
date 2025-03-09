@@ -1,0 +1,189 @@
+---
+interface Props {
+  id: string;
+  label: string;
+  required?: boolean;
+  value?: string;
+  class?: string;
+}
+
+const { id, label, required = false, value = '', class: className = '' } = Astro.props;
+---
+
+<div class={className}>
+  <label for={id} class="block text-sm font-medium text-gray-700 mb-2">
+    {label} {required && <span class="text-red-500">*</span>}
+  </label>
+  
+  <div class="flex items-center space-x-4">
+    <div class="flex-1">
+      <input
+        type="text"
+        id={id}
+        name={id}
+        value={value}
+        required={required}
+        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+      />
+    </div>
+    
+    <div class="flex-shrink-0">
+      <label class="block">
+        <span class="sr-only">Choose image</span>
+        <input 
+          type="file"
+          accept="image/*"
+          class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark"
+          data-target={id}
+        />
+      </label>
+    </div>
+  </div>
+
+  {value && (
+    <div class="mt-2">
+      <img src={value} alt="Preview" class="h-32 w-auto object-cover rounded-lg" />
+    </div>
+  )}
+
+  <div id={`${id}-error`} class="mt-2 text-sm text-red-600 hidden"></div>
+</div>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  // Helper to create filename-safe string
+  function slugify(text: string) {
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  // Helper to determine bucket and path based on input id
+  function getBucketInfo(inputId: string) {
+    if (inputId === 'location_logo') {
+      return {
+        bucket: 'MEQuirk',
+        folder: 'locations/logos'
+      };
+    }
+    if (inputId === 'location_featured_image') {
+      return {
+        bucket: 'MEQuirk',
+        folder: 'locations/featured-images'
+      };
+    }
+    if (inputId === 'logo_url') {
+      return {
+        bucket: 'MEQuirk',
+        folder: 'org-logos'
+      };
+    }
+    if (inputId === 'featured_image_url') {
+      return {
+        bucket: 'MEQuirk',
+        folder: 'post-featured'
+      };
+    }
+    return {
+      bucket: 'MEQuirk',
+      folder: 'uploads'
+    };
+  }
+
+  // Handle file uploads
+  async function handleFileUpload(file: File, targetInput: HTMLInputElement) {
+    const errorElement = document.getElementById(`${targetInput.id}-error`);
+    
+    try {
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please select an image file');
+      }
+
+      // Show loading state
+      targetInput.disabled = true;
+      if (errorElement) errorElement.classList.add('hidden');
+
+      // Get bucket info
+      const { bucket, folder } = getBucketInfo(targetInput.id);
+
+      // Create filename
+      let filename = slugify(file.name);
+      if (targetInput.id === 'featured_image_url') {
+        // For featured images, use post title if available
+        const titleInput = document.getElementById('title') as HTMLInputElement;
+        if (titleInput?.value) {
+          const extension = file.name.split('.').pop()?.toLowerCase();
+          filename = `${slugify(titleInput.value)}.${extension}`;
+        }
+      } else if (targetInput.id === 'location_logo' || targetInput.id === 'location_featured_image') {
+        // For location images, use location title if available
+        const titleInput = document.getElementById('title') as HTMLInputElement;
+        if (titleInput?.value) {
+          const extension = file.name.split('.').pop()?.toLowerCase();
+          const timestamp = new Date().getTime();
+          filename = `${slugify(titleInput.value)}-${timestamp}.${extension}`;
+        }
+      }
+
+      // Add folder prefix if needed
+      const filePath = folder ? `${folder}/${filename}` : filename;
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: file.type
+        });
+
+      if (error) throw error;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+
+      // Update input value
+      targetInput.value = publicUrl;
+
+      // Update or create preview
+      const previewContainer = targetInput.parentElement?.parentElement?.nextElementSibling;
+      if (previewContainer?.tagName === 'DIV' && previewContainer.querySelector('img')) {
+        const previewImg = previewContainer.querySelector('img');
+        if (previewImg) {
+          previewImg.src = publicUrl;
+        }
+      } else {
+        const preview = document.createElement('div');
+        preview.className = 'mt-2';
+        preview.innerHTML = `<img src="${publicUrl}" alt="Preview" class="h-32 w-auto object-cover rounded-lg">`;
+        targetInput.parentElement?.parentElement?.insertAdjacentElement('afterend', preview);
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      if (errorElement) {
+        errorElement.textContent = error.message || 'Failed to upload image. Please try again.';
+        errorElement.classList.remove('hidden');
+      }
+    } finally {
+      targetInput.disabled = false;
+    }
+  }
+
+  // Add event listeners
+  document.addEventListener('change', async (e) => {
+    const target = e.target as HTMLInputElement;
+    if (!target.matches('input[type="file"]')) return;
+
+    const file = target.files?.[0];
+    if (!file) return;
+
+    const targetInput = document.getElementById(target.dataset.target || '') as HTMLInputElement;
+    if (!targetInput) return;
+
+    await handleFileUpload(file, targetInput);
+  });
+</script>

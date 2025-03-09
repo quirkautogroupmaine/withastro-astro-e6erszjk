@@ -1,0 +1,333 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+import LocationDeliveries from '../../components/quirk_locations/LocationDeliveries.astro';
+import LocationAbout from '../../components/quirk_locations/LocationAbout.astro';
+import LocationStaff from '../../components/quirk_locations/LocationStaff.astro';
+import LocationDonations from '../../components/quirk_locations/LocationDonations.astro';
+import LocationCareers from '../../components/quirk_locations/LocationCareers.astro';
+import LocationDeals from '../../components/quirk_locations/LocationDeals.astro';
+import LocationReviews from '../../components/quirk_locations/LocationReviews.astro';
+import { Info, Users, Building2, HardHat, Tags, Star, Briefcase } from 'lucide-react';
+
+// ✅ Change to Static Generation
+export const prerender = true;
+
+// ✅ Generate Static Paths at Build Time
+export async function getStaticPaths() {
+  const { data: locations, error } = await supabase
+    .from('quirk_locations')
+    .select('slug');
+
+  if (error) {
+    console.error('Error fetching locations:', error);
+    return [];
+  }
+
+  return locations?.map(location => ({
+    params: { slug: location.slug }
+  })) || [];
+}
+
+// ✅ Get location data at build time
+const { slug } = Astro.params;
+const { data: location, error: locationError } = await supabase
+  .from('quirk_locations')
+  .select('*')
+  .eq('slug', slug)
+  .single();
+
+if (locationError || !location) {
+  console.error(`Location not found: ${slug}`);
+  return Astro.redirect('/404');
+}
+
+// ✅ Check for active job listings
+const { data: jobs } = await supabase
+  .from('jobs')
+  .select('id')
+  .eq('quirk_location_id', location.id)
+  .eq('is_active', true)
+  .limit(1);
+
+const hasJobs = jobs && jobs.length > 0;
+
+// Define tabs
+const tabs = [
+  { id: 'about', label: 'About', icon: 'Info' },
+  { id: 'local', label: 'Local', icon: 'Building2' },
+  { id: 'customers', label: 'Our Customers', icon: 'Users' },
+  { id: 'staff', label: 'Our Staff', icon: 'Users' },
+  { id: 'careers', label: 'Careers', icon: 'Briefcase' },
+  { id: 'deals', label: 'Deals', icon: 'Tags' },
+  { id: 'reviews', label: 'Reviews', icon: 'Star' }
+];
+
+// Generate structured data
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "AutoDealer",
+  "@id": `https://community.quirkauto.com/locations/${location.slug}`,
+  "name": location.title,
+  "image": location.location_featured_image || location.location_logo,
+  "url": `https://community.quirkauto.com/locations/${location.slug}`,
+  "telephone": location.phone,
+  "description": location.content_description,
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": location.physical_address,
+    "addressLocality": location.city,
+    "addressRegion": location.state,
+    "postalCode": location.zip_code,
+    "addressCountry": "US"
+  },
+  "geo": {
+    "@type": "GeoCoordinates",
+    "latitude": location.latitude,
+    "longitude": location.longitude
+  },
+  "openingHoursSpecification": [
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday"
+      ],
+      "opens": "08:00",
+      "closes": "18:00"
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      "dayOfWeek": "Saturday",
+      "opens": "08:00",
+      "closes": "17:00"
+    }
+  ],
+  "sameAs": [
+    location.website,
+    location.facebook,
+    location.instagram,
+    location.youtube_profile,
+    location.gmb
+  ].filter(Boolean),
+  "areaServed": {
+    "@type": "State",
+    "name": "Maine"
+  },
+  "priceRange": "$$",
+  "paymentAccepted": [
+    "Cash",
+    "Credit Card",
+    "Debit Card",
+    "Bank Transfer"
+  ],
+  "currenciesAccepted": "USD"
+};
+---
+
+<Layout title={location.title}>
+  {/* Add structured data */}
+  <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
+  <!-- Hero Section -->
+  <div class="relative">
+    <div class="absolute inset-0">
+      <img 
+        src={location.location_featured_image || 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&q=80'}
+        alt={location.title}
+        class="w-full h-full object-cover"
+      />
+      <div class="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row items-start gap-8">
+        {location.location_logo && (
+          <div class="flex-shrink-0">
+            <img 
+              src={location.location_logo}
+              alt={`${location.title} logo`}
+              class="h-24 sm:h-32 bg-white rounded-lg p-2"
+            />
+          </div>
+        )}
+        <div class="flex-1">
+          <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
+            {location.title}
+          </h1>
+          <p class="mt-4 sm:mt-6 text-lg sm:text-xl text-white">
+            {location.physical_address}<br />
+            {location.city}, {location.state} {location.zip_code}
+          </p>
+          <div class="mt-6 sm:mt-8 flex flex-wrap gap-4">
+            {location.website && (
+              <a
+                href={location.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-secondary hover:bg-secondary-light transition-colors"
+              >
+                Visit Website
+              </a>
+            )}
+            {location.gmb && (
+              <a
+                href={location.gmb}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-cta hover:bg-red-700 transition-colors"
+              >
+                Get Directions
+              </a>
+            )}
+            {hasJobs && (
+              <a
+                href={`/careers?location=${encodeURIComponent(location.title)}`}
+                class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-secondary hover:bg-secondary-light transition-colors"
+              >
+                View Career Opportunities
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Location Tabs -->
+  <div class="bg-primary border-b border-primary/20 sticky top-0 z-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex overflow-x-auto hide-scrollbar py-2 -mb-px space-x-2">
+        {tabs.map(tab => (
+          <button
+            data-tab={tab.id}
+            class="tab-button whitespace-nowrap px-4 py-2 text-sm font-medium rounded-full transition-colors text-white/70 hover:text-white hover:bg-white/10"
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div id="about" class="tab-content">
+      <LocationAbout title={location.title} description={location.content_description} />
+    </div>
+
+    <div id="local" class="tab-content hidden">
+      <LocationDonations locationId={location.id} title={location.title} />
+    </div>
+
+    <div id="customers" class="tab-content hidden">
+      <LocationDeliveries locationId={location.id} title={location.title} />
+    </div>
+
+    <div id="staff" class="tab-content hidden">
+      <LocationStaff locationId={location.id} title={location.title} />
+    </div>
+
+    <div id="careers" class="tab-content hidden">
+      <LocationCareers locationId={location.id} title={location.title} />
+    </div>
+
+    <div id="deals" class="tab-content hidden">
+      <LocationDeals title={location.title} />
+    </div>
+
+    <div id="reviews" class="tab-content hidden">
+      <LocationReviews title={location.title} />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  /* Hide scrollbar but keep functionality */
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Active tab styles */
+  .tab-button.active {
+    @apply bg-white/10 text-white;
+  }
+
+  /* Smooth transitions */
+  .tab-content {
+    transition: opacity 0.3s ease-in-out;
+  }
+
+  .tab-content.hidden {
+    display: none;
+    opacity: 0;
+  }
+
+  .tab-content:not(.hidden) {
+    display: block;
+    opacity: 1;
+  }
+</style>
+
+<script>
+  // Tab functionality
+  function setupTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    // Get active tab from URL hash or default to 'about'
+    const activeTabId = window.location.hash.slice(1) || 'about';
+    
+    function setActiveTab(tabId: string) {
+      // Update tab buttons
+      tabButtons.forEach(button => {
+        if (button.getAttribute('data-tab') === tabId) {
+          button.classList.add('active');
+        } else {
+          button.classList.remove('active');
+        }
+      });
+      
+      // Update content visibility
+      tabContents.forEach(content => {
+        if (content.id === tabId) {
+          content.classList.remove('hidden');
+        } else {
+          content.classList.add('hidden');
+        }
+      });
+      
+      // Update URL hash without scrolling
+      const scrollPosition = window.scrollY;
+      window.location.hash = tabId;
+      window.scrollTo(0, scrollPosition);
+    }
+    
+    // Set initial active tab
+    setActiveTab(activeTabId);
+    
+    // Add click handlers
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabId = button.getAttribute('data-tab');
+        if (tabId) setActiveTab(tabId);
+      });
+    });
+    
+    // Handle back/forward navigation
+    window.addEventListener('hashchange', () => {
+      const newTabId = window.location.hash.slice(1) || 'about';
+      setActiveTab(newTabId);
+    });
+  }
+
+  // Initialize tabs when the DOM is ready
+  document.addEventListener('DOMContentLoaded', setupTabs);
+</script>

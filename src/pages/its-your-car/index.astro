@@ -1,0 +1,132 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Enable static generation for this page
+export const prerender = true;
+
+// Fetch all published IYC posts using the view
+const { data: posts } = await supabase
+  .from('iyc_with_relations')
+  .select('*')
+  .eq('published', true)
+  .order('created_at', { ascending: false });
+---
+
+<Layout title="It's Your Car - Maine Vehicle Deliveries">
+  <div class="bg-gray-50">
+    <!-- Hero Section -->
+    <div class="relative">
+      <div class="absolute inset-0">
+        <img 
+          src="https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&q=80" 
+          alt="Happy car owners in Maine" 
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
+      </div>
+      <div class="relative max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+          It's Your Car, Maine!
+        </h1>
+        <p class="mt-6 text-xl text-white max-w-3xl mx-auto">
+          Celebrating happy Mainers and their new vehicles. From Bangor to Portland, Augusta to Rockland - see the smiles and stories behind every delivery.
+        </p>
+      </div>
+    </div>
+
+    <!-- Posts Grid -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      {posts && posts.length > 0 ? (
+        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {posts.map((post, i) => (
+            <div 
+              class="bg-white rounded-lg shadow-lg overflow-hidden post-item opacity-0"
+              style={`animation: fade-slide-up 0.6s ease-out ${i * 0.1}s forwards;`}
+            >
+              <a href={`/its-your-car/${post.slug}`} class="block">
+                <img 
+                  src={post.featured_image_url}
+                  alt={post.title}
+                  class="w-full h-64 object-cover hover:opacity-90 transition-opacity"
+                  loading="lazy"
+                />
+              </a>
+              <div class="p-6">
+                <div class="flex flex-wrap gap-2 mb-4">
+                  {post.quirk_location_title && (
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary text-white">
+                      {post.quirk_location_title}
+                    </span>
+                  )}
+                  {post.location_name && (
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-secondary text-white">
+                      <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {post.location_name}
+                    </span>
+                  )}
+                </div>
+                <h2 class="text-xl font-bold text-primary mb-4">
+                  <a href={`/its-your-car/${post.slug}`} class="hover:text-secondary transition-colors">
+                    {post.title}
+                  </a>
+                </h2>
+                {post.excerpt && (
+                  <p class="text-gray-600 mb-4">{post.excerpt}</p>
+                )}
+                <div class="flex items-center justify-between">
+                  <time class="text-sm text-gray-500">
+                    {new Date(post.published_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </time>
+                  <a 
+                    href={`/its-your-car/${post.slug}`} 
+                    class="inline-flex items-center text-secondary hover:text-primary transition-colors"
+                  >
+                    Read more
+                    <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div class="text-center py-12">
+          <div class="bg-white p-8 rounded-lg shadow-sm inline-block">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <h3 class="mt-3 text-lg font-medium text-gray-900">No posts yet</h3>
+            <p class="mt-2 text-sm text-gray-600">Check back soon for new vehicle deliveries!</p>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+</Layout>
+
+<style>
+  @keyframes fade-slide-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .post-item {
+    will-change: transform, opacity;
+  }
+</style>

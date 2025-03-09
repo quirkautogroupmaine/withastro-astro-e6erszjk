@@ -1,0 +1,182 @@
+---
+interface Props {
+  locationId: string;
+  title: string;
+}
+
+const { locationId, title } = Astro.props;
+
+import { supabase } from '../../lib/supabase';
+
+// Fetch active jobs and location data
+const { data: locationData } = await supabase
+  .from('quirk_locations')
+  .select('location_logo')
+  .eq('id', locationId)
+  .single();
+
+// Fetch active jobs for this location
+const { data: jobs } = await supabase
+  .from('jobs')
+  .select(`
+    *,
+    quirk_location:quirk_locations(
+      id,
+      title,
+      city,
+      location_logo
+    )
+  `)
+  .eq('quirk_location_id', locationId)
+  .eq('is_active', true)
+  .order('content_type_postrank', { ascending: true });
+
+const hasJobs = jobs && jobs.length > 0;
+
+// Default job description
+const defaultDescription = "Join our team at Quirk Auto Group! This position offers competitive benefits, a great work environment, and opportunities for growth. We're looking for motivated individuals who share our commitment to exceptional customer service and community values.";
+---
+
+{hasJobs ? (
+  <div class="bg-white rounded-lg shadow-lg p-8 mb-12">
+    <div class="flex flex-col md:flex-row items-center gap-8 mb-8">
+      {locationData?.location_logo && (
+        <div class="flex-shrink-0">
+          <img 
+            src={locationData.location_logo}
+            alt={title}
+            class="h-32 w-auto object-contain rounded-lg border border-black"
+          />
+        </div>
+      )}
+      <div class="flex-1 text-center md:text-left">
+        <h2 class="text-2xl font-bold text-primary mb-4">Join Our Team at {title}</h2>
+        <p class="text-gray-600">
+          We're looking for talented individuals to join our growing team. Check out our current openings below.
+        </p>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      {jobs.map((job) => (
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 border border-gray-200">
+          <div class="p-6">
+            <div class="flex flex-col md:flex-row gap-6">
+              {locationData?.location_logo && (
+                <div class="flex-shrink-0">
+                  <img 
+                    src={locationData.location_logo}
+                    alt={title}
+                    class="h-24 w-auto object-contain rounded-lg border border-black mx-auto md:mx-0"
+                  />
+                </div>
+              )}
+              <div class="flex-1">
+                <h3 class="text-xl font-bold text-primary mb-2">{job.title}</h3>
+                <div class="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
+                  {job.department && (
+                    <div class="flex items-center gap-2">
+                      <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                      <span>{job.department}</span>
+                    </div>
+                  )}
+                  {job.employment_type && (
+                    <div class="flex items-center gap-2">
+                      <svg class="w-5 h-5 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>{job.employment_type}</span>
+                    </div>
+                  )}
+                </div>
+                <p class="text-gray-600 mb-4 line-clamp-2">
+                  {job.description || defaultDescription}
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 mt-4">
+                  <a
+                    href={`/careers/${job.id}`}
+                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-dark transition-colors group"
+                  >
+                    View Details
+                    <svg class="ml-2 -mr-1 h-4 w-4 transform transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </a>
+                  <a
+                    href={job.application_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-secondary hover:bg-secondary-light transition-colors"
+                  >
+                    Apply Now
+                    <svg class="ml-2 -mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+) : (
+  <div class="bg-gray-50 py-16 -mx-4 sm:-mx-6 lg:-mx-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        {locationData?.location_logo && (
+          <img 
+            src={locationData.location_logo}
+            alt={title}
+            class="h-32 w-auto object-contain rounded-lg border border-black mx-auto mb-8"
+          />
+        )}
+        <h2 class="text-3xl font-bold text-primary mb-4">Join Our Team</h2>
+        <p class="text-lg text-gray-600">
+          No current openings at {title}. Check our careers page for opportunities at other locations!
+        </p>
+        <a 
+          href="/careers"
+          class="inline-flex items-center px-6 py-3 mt-6 border border-transparent text-base font-medium rounded-md text-white bg-secondary hover:bg-secondary-light transition-colors"
+        >
+          View All Openings
+          <svg class="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+)}
+
+<style>
+  /* Smooth transitions */
+  .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  /* Text truncation */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 640px) {
+    .flex-col-mobile {
+      flex-direction: column;
+    }
+    
+    .w-full-mobile {
+      width: 100%;
+    }
+  }
+</style>
+---

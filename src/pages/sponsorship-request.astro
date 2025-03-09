@@ -1,0 +1,460 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Support Request">
+  <div class="bg-gray-50">
+    <!-- Hero Section -->
+    <div class="relative">
+      <div class="absolute inset-0">
+        <img 
+          src="https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&q=80" 
+          alt="Community support" 
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/90 to-secondary/80"></div>
+      </div>
+      <div class="relative max-w-3xl mx-auto py-16 px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl">Support Request</h1>
+        <p class="mt-4 text-xl text-white">
+          Partner with Quirk Auto Group to make a difference in Maine communities.
+        </p>
+      </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 -mt-8">
+      <form class="space-y-8 divide-y divide-gray-200">
+        <!-- Support Type Selection -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div class="p-6 sm:p-8 bg-gradient-to-r from-primary/5 to-secondary/5">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-primary">Support Type</h2>
+                <p class="text-gray-600 text-sm">Select the type of support you're requesting</p>
+              </div>
+            </div>
+            
+            <div class="space-y-4">
+              <div class="flex items-center gap-4">
+                <input
+                  type="radio"
+                  id="sponsorship"
+                  name="support_type"
+                  value="sponsorship"
+                  class="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                />
+                <label for="sponsorship" class="text-sm font-medium text-gray-700">
+                  Sponsorship - For ongoing partnerships and event support
+                </label>
+              </div>
+              <div class="flex items-center gap-4">
+                <input
+                  type="radio"
+                  id="donation"
+                  name="support_type"
+                  value="donation"
+                  class="h-4 w-4 text-primary focus:ring-primary border-gray-300"
+                />
+                <label for="donation" class="text-sm font-medium text-gray-700">
+                  Donation - For one-time charitable support
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Organization Information -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden pt-8">
+          <div class="p-6 sm:p-8 bg-gradient-to-r from-primary/5 to-secondary/5">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-primary">Organization Information</h2>
+                <p class="text-gray-600 text-sm">Tell us about your organization</p>
+              </div>
+            </div>
+            
+            <div class="space-y-6">
+              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label for="org-name" class="block text-sm font-medium text-gray-700">
+                    Organization Name <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="org-name"
+                    name="org-name"
+                    required
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label for="org-website" class="block text-sm font-medium text-gray-700">
+                    Organization Website
+                  </label>
+                  <input
+                    type="url"
+                    id="org-website"
+                    name="org-website"
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label for="org-facebook" class="block text-sm font-medium text-gray-700">
+                    Facebook Page
+                  </label>
+                  <input
+                    type="url"
+                    id="org-facebook"
+                    name="org-facebook"
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label for="org-youtube" class="block text-sm font-medium text-gray-700">
+                    YouTube Channel
+                  </label>
+                  <input
+                    type="url"
+                    id="org-youtube"
+                    name="org-youtube"
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden pt-8">
+          <div class="p-6 sm:p-8 bg-gradient-to-r from-secondary/5 to-primary/5">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-primary">Contact Information</h2>
+                <p class="text-gray-600 text-sm">How can we reach you?</p>
+              </div>
+            </div>
+            
+            <div class="space-y-6">
+              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label for="first-name" class="block text-sm font-medium text-gray-700">
+                    First Name <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="first-name"
+                    name="first-name"
+                    required
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label for="last-name" class="block text-sm font-medium text-gray-700">
+                    Last Name <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="last-name"
+                    name="last-name"
+                    required
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label for="title" class="block text-sm font-medium text-gray-700">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                />
+              </div>
+
+              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label for="email" class="block text-sm font-medium text-gray-700">
+                    Email <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                  />
+                </div>
+
+                <div>
+                  <label for="phone" class="block text-sm font-medium text-gray-700">
+                    Phone Number <span class="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    required
+                    class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Required Documents -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden pt-8">
+          <div class="p-6 sm:p-8 bg-gradient-to-r from-primary/5 to-secondary/5">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-primary">Required Documents</h2>
+                <p class="text-gray-600 text-sm">Please upload the following documents</p>
+              </div>
+            </div>
+            
+            <div class="space-y-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">
+                  Support Request Documentation (PDF)
+                </label>
+                <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary transition-colors">
+                  <div class="space-y-1 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <div class="flex text-sm text-gray-600">
+                      <label for="support-pdf" class="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary-dark">
+                        <span>Upload a file</span>
+                        <input id="support-pdf" name="support-pdf" type="file" accept=".pdf" class="sr-only" />
+                      </label>
+                      <p class="pl-1">or drag and drop</p>
+                    </div>
+                    <p class="text-xs text-gray-500">PDF up to 10MB</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700">
+                  W9 Document (Required) <span class="text-red-500">*</span>
+                </label>
+                <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-primary transition-colors">
+                  <div class="space-y-1 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <div class="flex text-sm text-gray-600">
+                      <label for="w9-pdf" class="relative cursor-pointer rounded-md font-medium text-primary hover:text-primary-dark">
+                        <span>Upload a file</span>
+                        <input id="w9-pdf" name="w9-pdf" type="file" accept=".pdf" required class="sr-only" />
+                      </label>
+                      <p class="pl-1">or drag and drop</p>
+                    </div>
+                    <p class="text-xs text-gray-500">PDF up to 10MB</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Support Details -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden pt-8">
+          <div class="p-6 sm:p-8 bg-gradient-to-r from-secondary/5 to-primary/5">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center">
+                <svg class="w-6 h-6 text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-primary">Support Details</h2>
+                <p class="text-gray-600 text-sm">Tell us about your support request</p>
+              </div>
+            </div>
+            
+            <div>
+              <label for="description" class="block text-sm font-medium text-gray-700">
+                Description of Support Request <span class="text-red-500">*</span>
+              </label>
+              <div class="mt-2">
+                <textarea
+                  id="description"
+                  name="description"
+                  rows="6"
+                  required
+                  class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                  placeholder="Please provide details about your support request, including the purpose, timeline, and how it will benefit the community..."
+                ></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Employee Reference -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden pt-8">
+          <div class="p-6 sm:p-8 bg-gradient-to-r from-primary/5 to-secondary/5">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold text-primary">Employee Reference</h2>
+                <p class="text-gray-600 text-sm">Optional but recommended</p>
+              </div>
+            </div>
+
+            <div class="bg-blue-50 rounded-lg p-4 mb-6">
+              <p class="text-sm text-gray-600">
+                While providing a Quirk Employee Reference is not required, it is highly recommended. Through our yearly Christmas Bonus program, employees are encouraged to offer suggestions for Quirk Auto Group to support. The Quirk Boys match the donations of our employees.
+              </p>
+            </div>
+            
+            <div class="space-y-6">
+              <div>
+                <label for="employee-name" class="block text-sm font-medium text-gray-700">
+                  Employee Name
+                </label>
+                <input
+                  type="text"
+                  id="employee-name"
+                  name="employee-name"
+                  class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                />
+              </div>
+
+              <div>
+                <label for="employee-location" class="block text-sm font-medium text-gray-700">
+                  Employee Location
+                </label>
+                <select
+                  id="employee-location"
+                  name="employee-location"
+                  class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                >
+                  <option value="">Select a location</option>
+                  <option value="chevrolet-cadillac-bangor">Quirk Chevrolet Cadillac Bangor</option>
+                  <option value="subaru">Quirk Subaru</option>
+                  <option value="cdjr-fiat-bangor">Quirk Chrysler Dodge Jeep Ram Fiat Bangor</option>
+                  <option value="mercedes-benz">Mercedes-Benz At Quirk Auto Park</option>
+                  <option value="motor-city-bangor">Motor City Used Vehicle Center Bangor</option>
+                  <option value="hyundai-mitsubishi">Quirk Hyundai Mitsubishi</option>
+                  <option value="motorsports">Quirk MotorSports</option>
+                  <option value="cars-by-us-bangor">Quirk Cars By Us Bangor</option>
+                  <option value="ford-cdjr-belfast">Quirk Ford CDJR Belfast</option>
+                  <option value="carquest-belfast">Quirk CarQuest Belfast</option>
+                  <option value="chevrolet-gmc-rockland">Quirk Chevrolet GMC Rockland</option>
+                  <option value="carquest-rockport">Quirk CarQuest Rockport</option>
+                  <option value="carquest-rockland">Quirk CarQuest Rockland</option>
+                  <option value="ford-augusta">Quirk Ford Augusta</option>
+                  <option value="aftermarket-augusta">Quirk Aftermarket Augusta</option>
+                  <option value="carquest-augusta">Quirk CarQuest Augusta</option>
+                  <option value="chevrolet-portland">Quirk Chevrolet Portland</option>
+                  <option value="alfa-romeo-fiat-portland">Quirk Alfa Romeo / Fiat Portland</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="employee-email" class="block text-sm font-medium text-gray-700">
+                  Employee Email
+                </label>
+                <input
+                  type="email"
+                  id="employee-email"
+                  name="employee-email"
+                  class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="pt-8">
+          <div class="flex justify-end gap-4">
+            <button
+              type="button"
+              class="px-6 py-3 border border-gray-300 rounded-lg text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors"
+            >
+              Submit Request
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  /* Smooth scroll behavior */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Focus styles */
+  input:focus, select:focus, textarea:focus {
+    @apply ring-2 ring-primary ring-opacity-50;
+  }
+
+  /* File upload hover effect */
+  .border-dashed:hover {
+    @apply border-primary border-opacity-50;
+  }
+
+  /* Button hover transitions */
+  button {
+    @apply transform transition-all duration-200;
+  }
+
+  button:hover {
+    @apply -translate-y-0.5;
+  }
+
+  /* Section transitions */
+  .bg-gradient-to-r {
+    @apply transition-all duration-300;
+  }
+
+  .bg-gradient-to-r:hover {
+    @apply bg-opacity-75;
+  }
+</style>

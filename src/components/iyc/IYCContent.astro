@@ -1,0 +1,40 @@
+---
+interface Props {
+  post: {
+    content: string;
+    enhanced_content?: string;
+  };
+}
+
+const { post } = Astro.props;
+---
+
+<div class="prose prose-lg max-w-none" set:html={post.content} />
+
+<style>
+  /* Style the HTML content */
+  .prose h2 {
+    @apply text-3xl font-bold text-primary mt-12 mb-6;
+  }
+  .prose h3 {
+    @apply text-2xl font-bold text-primary mt-8 mb-4;
+  }
+  .prose p {
+    @apply text-gray-600 mb-6;
+  }
+  .prose ul {
+    @apply list-none space-y-2 mb-6;
+  }
+  .prose li {
+    @apply text-gray-600;
+  }
+  .prose strong {
+    @apply text-primary font-semibold;
+  }
+  .prose em {
+    @apply text-gray-700 italic;
+  }
+  .prose > *:first-child {
+    @apply mt-0;
+  }
+</style>

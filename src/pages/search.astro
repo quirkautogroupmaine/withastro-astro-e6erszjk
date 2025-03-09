@@ -1,0 +1,33 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Search from '../components/search/Search';
+---
+
+<Layout title="Search">
+  <div class="bg-gray-50 min-h-screen">
+    <!-- Hero Section -->
+    <div class="relative">
+      <div class="absolute inset-0">
+        <img 
+          src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&q=80" 
+          alt="Maine's scenic coastline" 
+          class="w-full h-full object-cover"
+        />
+        <div class="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
+      </div>
+      <div class="relative max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+          Discover Maine's Stories
+        </h1>
+        <p class="mt-6 text-xl text-white max-w-3xl mx-auto">
+          From the rocky shores of Portland to the rolling hills of Bangor, explore how Quirk Auto Group is making a difference in Maine communities.
+        </p>
+      </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <Search client:load />
+    </div>
+  </div>
+</Layout>

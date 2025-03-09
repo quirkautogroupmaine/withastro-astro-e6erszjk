@@ -1,0 +1,33 @@
+```astro
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+// Get all jobs
+const { data: jobs } = await supabase
+  .from('jobs')
+  .select('*');
+
+// Get all Quirk locations
+const { data: locations } = await supabase
+  .from('quirk_locations')
+  .select('*');
+
+// Debug data
+const debug = {
+  jobCount: jobs?.length || 0,
+  locationCount: locations?.length || 0,
+  jobs: jobs,
+  locations: locations
+};
+---
+
+<Layout title="Test Jobs Data">
+  <div class="p-8">
+    <h1 class="text-2xl font-bold mb-4">Jobs Data Debug</h1>
+    <pre class="bg-gray-100 p-4 rounded overflow-auto">
+      {JSON.stringify(debug, null, 2)}
+    </pre>
+  </div>
+</Layout>
+```

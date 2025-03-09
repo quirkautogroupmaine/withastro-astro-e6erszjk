@@ -1,0 +1,239 @@
+---
+import { supabase } from '../lib/supabase';
+
+// Fetch featured post based on priority:
+// 1. post_rank = 0
+// 2. random sticky post
+// 3. most recently updated post
+const { data: featuredPost } = await supabase
+  .from('posts')
+  .select(`
+    id,
+    title,
+    slug,
+    excerpt,
+    featured_image_url,
+    post_rank,
+    is_sticky
+  `)
+  .eq('published', true)
+  .eq('post_rank', 0)
+  .limit(1)
+  .maybeSingle();
+
+// If no post with rank 0, try to get a random sticky post
+const { data: stickyPost } = await supabase
+  .from('posts')
+  .select(`
+    id,
+    title,
+    slug,
+    excerpt,
+    featured_image_url,
+    post_rank,
+    is_sticky
+  `)
+  .eq('published', true)
+  .eq('is_sticky', true)
+  .limit(1)
+  .maybeSingle();
+
+// If no sticky post, get most recently updated post
+const { data: recentPost } = await supabase
+  .from('posts')
+  .select(`
+    id,
+    title,
+    slug,
+    excerpt,
+    featured_image_url,
+    post_rank,
+    is_sticky
+  `)
+  .eq('published', true)
+  .order('updated_at', { ascending: false })
+  .limit(1)
+  .maybeSingle();
+
+// Select the post to display based on priority
+const displayPost = featuredPost || stickyPost || recentPost;
+
+// Fetch top 6 posts for the homepage, excluding the featured post
+const { data: impactPosts } = await supabase
+  .from('posts')
+  .select(`
+    *,
+    location:maine_cities(name),
+    quirk_location:quirk_locations(title),
+    categories:post_categories(category:categories(name))
+  `)
+  .eq('published', true)
+  .not('id', 'eq', displayPost?.id) // Exclude featured post
+  .order('post_rank', { ascending: true }) // Primary sort by rank
+  .order('is_sticky', { ascending: false }) // Secondary sort by sticky
+  .order('updated_at', { ascending: false }) // Tertiary sort by update date
+  .limit(6);
+---
+
+<!-- Impact Posts Section -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+  <div class="text-center reveal-on-scroll">
+    <h2 class="text-3xl font-extrabold text-primary sm:text-4xl">Our Maine Impact</h2>
+    <p class="mt-4 text-lg text-gray-600">
+      Empowering <span class='font-semibold text-primary'>local initiatives</span> and strengthening 
+      <span class='inline-flex items-center text-secondary font-bold'>Maine communities</span> 
+      through <span class='italic text-accent'>meaningful investments</span>.
+    </p>
+  </div>
+
+  <div class="mt-16 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+    {impactPosts?.map((post, index) => (
+      <div 
+        class="bg-white rounded-lg shadow-lg overflow-hidden post-item opacity-0"
+        style={`animation: fade-slide-up 0.6s ease-out ${index * 0.1}s forwards;`}
+      >
+        <a href={`/posts/${post.slug}`} class="block">
+          <img 
+            src={post.featured_image_url}
+            alt={post.title}
+            class="w-full h-[328px] object-cover hover:opacity-90 transition-opacity transform hover:scale-105 duration-300"
+            loading="lazy"
+          />
+        </a>
+        <div class="p-4">
+          <h3 class="text-lg font-semibold text-primary">
+            <a href={`/posts/${post.slug}`} class="hover:text-secondary transition-colors">
+              {post.title}
+            </a>
+          </h3>
+          <p class="mt-2 text-gray-600">{post.excerpt}</p>
+          <div class="flex flex-wrap gap-2 mt-4">
+            {post.quirk_location?.title && (
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-white">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                {post.quirk_location.title}
+              </span>
+            )}
+            {post.location?.name && (
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary text-white">
+                <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {post.location.name}
+              </span>
+            )}
+            {post.categories?.map((cat) => (
+              <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary text-white">
+                {cat.category?.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  <!-- Commitment Statement and CTAs -->
+  <div class="mt-16 text-center">
+    <div class="max-w-3xl mx-auto mb-8">
+      <h3 class="text-2xl font-bold text-primary mb-4">Our Commitment to Maine</h3>
+      <p class="text-lg text-gray-700">
+        Since <span class="font-bold text-primary">1973</span>, Quirk Auto Group has been dedicated to making a 
+        <span class="text-secondary font-semibold">difference in Maine communities</span>.  
+        Through our <span class="font-bold text-accent">sponsorships and donations</span>, we support organizations that  
+        <span class="text-primary font-medium">strengthen neighborhoods</span>,  
+        <span class="text-secondary font-medium">empower youth</span>,  
+        <span class="text-primary font-medium">honor veterans</span>,  
+        <span class="text-secondary font-medium">care for senior citizens</span>, and  
+        <span class="text-primary font-medium">protect and support pets</span>—  
+        all to build a <span class="italic text-accent">brighter future</span> for Maine residents.
+      </p>
+    </div>
+    
+    <div class="flex flex-col sm:flex-row justify-center gap-4">
+      <a 
+        href="/sponsorships" 
+        class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-secondary hover:bg-secondary-light transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg group"
+      >
+        View Our Sponsorships
+        <svg 
+          class="ml-2 w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+      <a 
+        href="/donations" 
+        class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-cta hover:bg-red-700 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg group"
+      >
+        View Our Donations
+        <svg 
+          class="ml-2 w-5 h-5 transform transition-transform duration-300 group-hover:translate-x-1" 
+          fill="none" 
+          stroke="currentColor" 
+          viewBox="0 0 24 24"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes fade-slide-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .post-item {
+    will-change: transform, opacity;
+  }
+
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  }
+
+  .reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+  // Intersection Observer for scroll animations
+  const observerOptions = {
+    root: null,
+    rootMargin: '0px',
+    threshold: 0.1
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  // Observe all elements with reveal-on-scroll class
+  document.addEventListener('DOMContentLoaded', () => {
+    const elements = document.querySelectorAll('.reveal-on-scroll');
+    elements.forEach(el => observer.observe(el));
+  });
+</script>

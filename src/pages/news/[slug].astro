@@ -1,0 +1,325 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase } from '../../lib/supabase';
+
+// Enable static generation for this page
+export const prerender = true;
+
+export async function getStaticPaths() {
+  // Fetch only news posts
+  const { data: posts } = await supabase
+    .from('posts')
+    .select(`
+      id,
+      slug,
+      categories:post_categories(
+        category:categories(slug)
+      )
+    `)
+    .eq('published', true);
+
+  // Filter for news posts only
+  return posts?.filter(post => {
+    const categories = post.categories?.map(c => c.category?.slug) || [];
+    return categories.includes('news');
+  }).map(post => ({
+    params: { slug: post.slug }
+  })) || [];
+}
+
+const { slug } = Astro.params;
+
+// Fetch the post with related data
+const { data: post } = await supabase
+  .from('posts')
+  .select(`
+    *,
+    location:maine_cities(name),
+    quirk_location:quirk_locations(
+      id,
+      title,
+      slug,
+      city,
+      state,
+      website,
+      gmb
+    ),
+    organization:organizations(
+      name,
+      website_url,
+      facebook_url,
+      description,
+      logo_url
+    ),
+    categories:post_categories(
+      category:categories(name, slug)
+    ),
+    images:post_images(image_url, caption)
+  `)
+  .eq('slug', slug)
+  .single();
+
+if (!post) {
+  return Astro.redirect('/404');
+}
+
+// Check if this is not a news post and redirect if necessary
+const categories = post.categories?.map(c => c.category?.slug) || [];
+if (!categories.includes('news')) {
+  return Astro.redirect(`/posts/${slug}`);
+}
+
+// Transform YouTube URL to embed URL if present
+const getYouTubeEmbedUrl = (url: string) => {
+  if (!url) return null;
+  const videoId = url.split('v=')[1];
+  return videoId ? `https://youtube.com/embed/${videoId}` : null;
+};
+
+const embedUrl = post.youtube_url ? getYouTubeEmbedUrl(post.youtube_url) : null;
+---
+
+<Layout 
+  title={post.title}
+  description={post.excerpt}
+  image={post.featured_image_url}
+>
+  <article class="bg-gray-50">
+    <!-- Hero Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div class="flex flex-wrap gap-2 mb-4">
+        {post.categories?.map((cat) => (
+          cat?.category?.name && (
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary text-white">
+              {cat.category.name}
+            </span>
+          )
+        ))}
+        {(post.location?.name || post.quirk_location?.title) && (
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-secondary text-white">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            {post.quirk_location?.title || post.location?.name}
+          </span>
+        )}
+      </div>
+
+      <div class="mb-8">
+        <h1 class="text-4xl font-extrabold tracking-tight text-primary sm:text-5xl lg:text-6xl mb-4">
+          {post.title}
+        </h1>
+      </div>
+
+      <p class="text-xl text-gray-600 max-w-3xl mb-8">
+        {post.excerpt}
+      </p>
+
+      <div class="flex items-center text-gray-500 mb-8">
+        <time datetime={post.published_at}>
+          {new Date(post.published_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })}
+        </time>
+      </div>
+    </div>
+
+    <!-- Featured Media -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
+      {embedUrl ? (
+        <div class="relative w-full" style="padding-bottom: 56.25%;">
+          <iframe
+            src={embedUrl}
+            title={post.title}
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+            class="absolute top-0 left-0 w-full h-full rounded-lg shadow-lg"
+          ></iframe>
+        </div>
+      ) : (
+        <img 
+          src={post.featured_image_url}
+          alt={post.title}
+          class="w-full rounded-lg shadow-lg object-cover h-[628px]"
+        />
+      )}
+    </div>
+
+    <!-- Content Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div class="flex flex-col lg:flex-row gap-12">
+        <!-- Main Content -->
+        <div class="lg:w-2/3">
+          <div class="prose prose-lg max-w-none" set:html={post.content} />
+
+          {post.images && post.images.length > 0 && (
+            <div class="mt-12">
+              <h2 class="text-2xl font-bold text-primary mb-6">Gallery</h2>
+              <div class="grid gap-6 md:grid-cols-2">
+                {post.images.map((image) => (
+                  <figure>
+                    <img
+                      src={image.image_url}
+                      alt={image.caption || post.title}
+                      class="w-full h-64 object-cover rounded-lg"
+                    />
+                    {image.caption && (
+                      <figcaption class="mt-2 text-sm text-gray-600">
+                        {image.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:w-1/3">
+          {post.quirk_location && (
+            <div class="bg-primary text-white p-6 rounded-lg shadow-md mb-8">
+              <h2 class="text-xl font-bold mb-4">{post.quirk_location.title}</h2>
+              <p class="text-gray-200 mb-4">
+                {post.quirk_location.city}, {post.quirk_location.state}
+              </p>
+              <div class="space-y-2">
+                {post.quirk_location.website && (
+                  <a
+                    href={post.quirk_location.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center text-secondary-light hover:text-white transition-colors"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                    Visit Website
+                  </a>
+                )}
+                {post.quirk_location.gmb && (
+                  <a
+                    href={post.quirk_location.gmb}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center text-secondary-light hover:text-white transition-colors"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Get Directions
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          {post.organization && (
+            <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+              <div class="flex items-center mb-4">
+                {post.organization.logo_url ? (
+                  <img 
+                    src={post.organization.logo_url} 
+                    alt={post.organization.name}
+                    class="h-12 w-12 object-contain rounded"
+                  />
+                ) : (
+                  <div class="h-12 w-12 bg-primary/10 rounded flex items-center justify-center">
+                    <span class="text-primary font-bold text-xl">
+                      {post.organization.name.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <h2 class="text-xl font-bold text-primary ml-4">{post.organization.name}</h2>
+              </div>
+              {post.organization.description && (
+                <p class="text-gray-600 mb-4">{post.organization.description}</p>
+              )}
+              <div class="space-y-2">
+                {post.organization.website_url && (
+                  <a
+                    href={post.organization.website_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center text-secondary hover:text-primary transition-colors"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                    </svg>
+                    Visit Website
+                  </a>
+                )}
+                {post.organization.facebook_url && (
+                  <a
+                    href={post.organization.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="flex items-center text-secondary hover:text-primary transition-colors"
+                  >
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+                    </svg>
+                    Follow on Facebook
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div class="bg-white p-8 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold text-primary mb-6">Latest News</h2>
+            <div class="space-y-6">
+              <a
+                href="/news"
+                class="block w-full text-center px-6 py-3 border-2 border-secondary text-secondary hover:bg-secondary hover:text-white font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                View All News
+              </a>
+              <a
+                href="https://quirkauto.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="block w-full text-center px-6 py-3 border-2 border-cta bg-cta text-white hover:bg-red-700 hover:border-red-700 font-medium rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+              >
+                Visit Quirk Auto
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+</Layout>
+
+<style>
+  /* Style the HTML content */
+  .prose h2 {
+    @apply text-3xl font-bold text-primary mt-12 mb-6;
+  }
+  .prose h3 {
+    @apply text-2xl font-bold text-primary mt-8 mb-4;
+  }
+  .prose p {
+    @apply text-gray-600 mb-6;
+  }
+  .prose ul {
+    @apply list-none space-y-2 mb-6;
+  }
+  .prose li {
+    @apply text-gray-600;
+  }
+  .prose strong {
+    @apply text-primary font-semibold;
+  }
+  .prose em {
+    @apply text-gray-700 italic;
+  }
+  .prose > *:first-child {
+    @apply mt-0;
+  }
+</style>
