@@ -5,18 +5,30 @@ import IYCEmployees from '../../components/iyc/IYCEmployees.astro';
 import IYCLocation from '../../components/iyc/IYCLocation.astro';
 import IYCRecent from '../../components/iyc/IYCRecent.astro';
 
-// Keep SSR enabled but pre-generate the 1,000 most recent posts
-export const prerender = false;
+// ✅ Enable full static generation
+export const prerender = true;
 
-const { slug } = Astro.params;
+// ✅ Fetch all IYC posts at build time
+export async function getStaticPaths() {
+  let { data: posts, error } = await supabase
+    .from('iyc_with_relations')
+    .select('slug')
+    .eq('published', true)
+    .order('published_at', { ascending: false });
 
-// Handle missing slugs
-if (!slug) {
-  console.error('No slug provided');
-  return Astro.redirect('/404');
+  if (error || !posts) {
+    console.error("Error fetching posts:", error);
+    return [];
+  }
+
+  // ✅ Generate a static page for each post
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+  }));
 }
 
-// Fetch post dynamically at runtime using the view
+// ✅ Fetch post content for each pre-rendered page
+const { slug } = Astro.params;
 const { data: post, error: postError } = await supabase
   .from('iyc_with_relations')
   .select('*')
@@ -29,20 +41,22 @@ if (postError || !post) {
   return Astro.redirect('/404');
 }
 
-// Format employees data - no need to parse since it's already a string
-const employees = post.employees ? post.employees.map(emp => ({
-  id: emp.id,
-  employee_first_name: emp.first_name,
-  employee_lastname: emp.last_name,
-  employee_job_title: emp.title,
-  employee_photo: emp.photo
-})) : [];
+// ✅ Format employee data
+const employees = post.employees
+  ? post.employees.map((emp) => ({
+      id: emp.id,
+      employee_first_name: emp.first_name,
+      employee_lastname: emp.last_name,
+      employee_job_title: emp.title,
+      employee_photo: emp.photo,
+    }))
+  : [];
 
-// Format publish date
+// ✅ Format publish date
 const publishDate = new Date(post.published_at).toLocaleDateString('en-US', {
   year: 'numeric',
   month: 'long',
-  day: 'numeric'
+  day: 'numeric',
 });
 ---
 
@@ -59,6 +73,7 @@ const publishDate = new Date(post.published_at).toLocaleDateString('en-US', {
           src={post.location_featured_image}
           alt={post.quirk_location_title}
           class="w-full h-full object-cover"
+          loading="lazy"
         />
         <div class="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
       </div>
