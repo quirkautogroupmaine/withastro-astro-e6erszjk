@@ -3,32 +3,31 @@ import Layout from '../../layouts/Layout.astro';
 import { supabase } from '../../lib/supabase';
 import IYCEmployees from '../../components/iyc/IYCEmployees.astro';
 import IYCLocation from '../../components/iyc/IYCLocation.astro';
-import IYCRecent from '../../components/iyc/IYCRecent.astro';
 
-// ✅ Enable full static generation
-export const prerender = true;
+export const prerender = true; // Enable static generation for first 500 posts
 
-// ✅ Fetch all IYC posts at build time
+// ✅ Generate static pages for the first 500 most recent posts
 export async function getStaticPaths() {
-  let { data: posts, error } = await supabase
+  const { data: posts, error } = await supabase
     .from('iyc_with_relations')
     .select('slug')
     .eq('published', true)
-    .order('published_at', { ascending: false });
+    .order('created_at', { ascending: false }) // Newest first
+    .limit(500); // Static render for first 500
 
   if (error || !posts) {
-    console.error("Error fetching posts:", error);
+    console.error('Error fetching slugs:', error);
     return [];
   }
 
-  // ✅ Generate a static page for each post
-  return posts.map((post) => ({
+  return posts.map(post => ({
     params: { slug: post.slug },
   }));
 }
 
-// ✅ Fetch post content for each pre-rendered page
 const { slug } = Astro.params;
+
+// Fetch post data
 const { data: post, error: postError } = await supabase
   .from('iyc_with_relations')
   .select('*')
@@ -41,39 +40,41 @@ if (postError || !post) {
   return Astro.redirect('/404');
 }
 
-// ✅ Format employee data
-const employees = post.employees
-  ? post.employees.map((emp) => ({
-      id: emp.id,
-      employee_first_name: emp.first_name,
-      employee_lastname: emp.last_name,
-      employee_job_title: emp.title,
-      employee_photo: emp.photo,
-    }))
-  : [];
+// Handle employees data safely
+let employeeIds = [];
+try {
+  if (post.employees && typeof post.employees === 'string') {
+    const parsed = JSON.parse(post.employees);
+    employeeIds = Array.isArray(parsed) ? parsed.map(emp => emp.id) : [];
+  } else if (Array.isArray(post.employees)) {
+    employeeIds = post.employees.map(emp => emp.id);
+  }
+} catch (err) {
+  console.error('Error parsing employees:', err);
+}
 
-// ✅ Format publish date
+// Format publish date
 const publishDate = new Date(post.published_at).toLocaleDateString('en-US', {
   year: 'numeric',
   month: 'long',
-  day: 'numeric',
+  day: 'numeric'
 });
 ---
 
 <Layout 
   title={post.title}
   description={post.excerpt}
-  image={post.location_featured_image}
+  image={post.featured_image_url}
 >
   <article class="min-h-screen bg-gray-50">
     <!-- Hero Section -->
     <div class="relative">
       <div class="absolute inset-0">
         <img 
-          src={post.location_featured_image}
+          src={post.quirk_location_featured_image || 'https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&q=80'}
           alt={post.quirk_location_title}
           class="w-full h-full object-cover"
-          loading="lazy"
+          loading="eager"
         />
         <div class="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary/70"></div>
       </div>
@@ -126,80 +127,32 @@ const publishDate = new Date(post.published_at).toLocaleDateString('en-US', {
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <!-- Left Column - Featured Image -->
-        <div class="h-full">
-          <img 
-            src={post.featured_image_url}
-            alt={post.title}
-            class="w-full h-full object-cover rounded-lg shadow-xl"
-          />
+        <div class="w-full h-[600px] bg-gray-100 rounded-lg shadow-lg overflow-hidden">
+          {post.featured_image_url && (
+            <img 
+              src={post.featured_image_url}
+              alt={post.title}
+              class="w-full h-full object-contain"
+              loading="lazy"
+            />
+          )}
         </div>
 
-        <!-- Right Column - Location and Team -->
         <div class="space-y-8">
-          {post.quirk_location_id && (
-            <IYCLocation locationId={post.quirk_location_id} />
-          )}
-
-          {employees.length > 0 && (
-            <IYCEmployees employees={employees} />
-          )}
+          {post.quirk_location_id && <IYCLocation locationId={post.quirk_location_id} />}
+          {employeeIds.length > 0 && <IYCEmployees employeeIds={employeeIds} />}
         </div>
       </div>
-
-      {/* Divider */}
+      
+      <!-- Divider -->
       <hr class="my-12 border-gray-200" />
 
-      {/* Enhanced Content Section */}
+      <!-- ✅ Enhanced Content Section Restored -->
       {post.enhanced_content && (
         <div class="prose prose-lg max-w-none mx-auto bg-white rounded-lg shadow-lg p-8">
           <div set:html={post.enhanced_content} />
         </div>
       )}
-
-      {/* Recent Posts Section */}
-      {post.quirk_location_id && (
-        <IYCRecent locationId={post.quirk_location_id} currentPostId={post.id} />
-      )}
     </div>
   </article>
 </Layout>
-
-<style>
-  /* Smooth transitions */
-  .prose {
-    transition: all 0.3s ease;
-  }
-
-  /* Mobile optimizations */
-  @media (max-width: 640px) {
-    .prose {
-      font-size: 1.125rem;
-    }
-  }
-
-  /* Image loading */
-  img {
-    transition: opacity 0.3s ease;
-  }
-
-  img[loading] {
-    opacity: 0;
-  }
-
-  img.loaded {
-    opacity: 1;
-  }
-</style>
-
-<script>
-  // Handle image loading
-  document.addEventListener('DOMContentLoaded', () => {
-    const images = document.querySelectorAll('img[loading="lazy"]');
-    images.forEach(img => {
-      img.addEventListener('load', () => {
-        img.classList.add('loaded');
-      });
-    });
-  });
-</script>

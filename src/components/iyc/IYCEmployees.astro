@@ -1,11 +1,13 @@
 ---
-import { supabase } from '../../lib/supabase';
-
 interface Props {
   employeeIds: string[];
 }
 
 const { employeeIds } = Astro.props;
+
+import { supabase } from '../../lib/supabase';
+
+console.log('IYCEmployees - Received employee IDs:', employeeIds); // Debug log
 
 // Fetch employees from database using the provided IDs
 const { data: employees, error } = await supabase
@@ -25,6 +27,8 @@ if (error) {
   console.error('Error fetching employees:', error);
 }
 
+console.log('IYCEmployees - Fetched employees:', employees); // Debug log
+
 const hasEmployees = employees && employees.length > 0;
 ---
 
@@ -32,10 +36,10 @@ const hasEmployees = employees && employees.length > 0;
   <div class="bg-white p-6 rounded-lg shadow-md mb-8 w-full">
     <h2 class="text-xl font-bold text-primary mb-6 text-center">Your Quirk Team</h2>
     <div class={`grid gap-6 ${
-      employees.length === 1 ? 'max-w-sm' : 
-      employees.length === 2 ? 'max-w-2xl grid-cols-2' : 
-      'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
-    } mx-auto`}>
+      employees.length === 1 ? 'max-w-sm mx-auto' : 
+      employees.length === 2 ? 'md:grid-cols-2 max-w-2xl mx-auto' : 
+      'md:grid-cols-2 lg:grid-cols-3'
+    }`}>
       {employees.map((employee) => (
         <div class="bg-gray-50 rounded-lg p-6 hover:shadow-md transition-shadow duration-300">
           <div class="flex flex-col items-center text-center">
@@ -140,14 +144,16 @@ const hasEmployees = employees && employees.length > 0;
 </style>
 
 <script>
-  // Handle image loading
   document.addEventListener('DOMContentLoaded', () => {
     const images = document.querySelectorAll('img[loading="lazy"]');
     images.forEach(img => {
-      img.addEventListener('load', () => {
+      if (img.complete) {
         img.classList.add('loaded');
-      });
+      } else {
+        img.addEventListener('load', () => {
+          img.classList.add('loaded');
+        });
+      }
     });
   });
 </script>
----

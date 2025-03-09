@@ -179,6 +179,24 @@ const embedUrl = post.youtube_url ? getYouTubeEmbedUrl(post.youtube_url) : null;
           )}
         </div>
 
+<!-- Breadcrumb Navigation -->
+<Breadcrumbs 
+  category={post.category} 
+  location={post.location} 
+  postTitle={post.title} 
+/>
+
+<!-- Post Content -->
+<article>
+  <h1>{post.title}</h1>
+  <!-- ...rest of the post content... -->
+</article>
+
+
+
+
+
+
         <!-- Sidebar -->
         <div class="lg:w-1/3">
           {post.quirk_location && (
