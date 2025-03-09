@@ -4,13 +4,13 @@ import react from '@astrojs/react';
 import netlify from '@astrojs/netlify';
 
 export default defineConfig({
-  integrations: [tailwind({ applyBaseStyles: true })], // ✅ Ensures Tailwind applies base styles
+  integrations: [tailwind(), react()], // ✅ Ensure React is included
   output: 'server',
   adapter: netlify({
     functionPerRoute: true,
   }),
   build: {
-    inlineStylesheets: 'always', // ✅ Forces inlining CSS to avoid missing styles
+    inlineStylesheets: 'always',
   },
   vite: {
     ssr: {
