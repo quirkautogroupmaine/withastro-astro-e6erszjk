@@ -8,7 +8,7 @@ import LocationDonations from '../../components/quirk_locations/LocationDonation
 import LocationCareers from '../../components/quirk_locations/LocationCareers.astro';
 import LocationDeals from '../../components/quirk_locations/LocationDeals.astro';
 import LocationReviews from '../../components/quirk_locations/LocationReviews.astro';
-import { Info, Users, Building2, HardHat, Tags, Star, Briefcase } from 'lucide-react';
+import LocationBizDetails from '../../components/quirk_locations/LocationBizDetails.astro';
 
 // ✅ Change to Static Generation
 export const prerender = true;
@@ -64,7 +64,7 @@ const tabs = [
 ];
 
 // Generate structured data
-const structuredData = {
+const articleSchema = {
   "@context": "https://schema.org",
   "@type": "AutoDealer",
   "@id": `https://community.quirkauto.com/locations/${location.slug}`,
@@ -130,7 +130,7 @@ const structuredData = {
 
 <Layout title={location.title}>
   {/* Add structured data */}
-  <script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+  <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
 
   <!-- Hero Section -->
   <div class="relative">
@@ -194,6 +194,11 @@ const structuredData = {
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Business Details -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 mb-8">
+    <LocationBizDetails location={location} />
   </div>
 
   <!-- Location Tabs -->

@@ -30,28 +30,36 @@ export default function JobFilters({ departments, cities, locations, onFilterCha
     setFilters(initialFilters);
   }, [initialFilters]);
 
-  const handleFilterChange = (key: keyof FilterState, value: string | undefined) => {
+  const handleFilterChange = (key: keyof FilterState, value: string) => {
     const newFilters = {
       ...filters,
       [key]: value === 'all' ? undefined : value
     };
     setFilters(newFilters);
-    if (onFilterChange) {
-      onFilterChange(newFilters);
-    }
+    
+    // Create URL with new parameters
+    const url = new URL(window.location.href);
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value) {
+        url.searchParams.set(key, value);
+      } else {
+        url.searchParams.delete(key);
+      }
+    });
+
+    // Update URL and trigger page reload
+    window.location.href = url.toString();
   };
 
   const handleReset = () => {
     setFilters({});
-    if (onFilterChange) {
-      onFilterChange({});
-    }
+    window.location.href = window.location.pathname;
   };
 
   const hasActiveFilters = Object.values(filters).some(value => value !== undefined);
 
   if (!mounted) {
-    return null; // Prevent hydration mismatch by not rendering until mounted
+    return null;
   }
 
   return (
