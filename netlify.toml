@@ -35,5 +35,3 @@
 [[edge_functions]]
   function = "entrypoint"
   path = "/*"
-
-// let's go 2.
