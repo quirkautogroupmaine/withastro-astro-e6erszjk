@@ -8,12 +8,9 @@ import LocationDonations from '../../components/quirk_locations/LocationDonation
 import LocationCareers from '../../components/quirk_locations/LocationCareers.astro';
 import LocationDeals from '../../components/quirk_locations/LocationDeals.astro';
 import LocationReviews from '../../components/quirk_locations/LocationReviews.astro';
-import LocationBizDetails from '../../components/quirk_locations/LocationBizDetails.astro';
 
-// ✅ Change to Static Generation
 export const prerender = true;
 
-// ✅ Generate Static Paths at Build Time
 export async function getStaticPaths() {
   const { data: locations, error } = await supabase
     .from('quirk_locations')
@@ -29,7 +26,6 @@ export async function getStaticPaths() {
   })) || [];
 }
 
-// ✅ Get location data at build time
 const { slug } = Astro.params;
 const { data: location, error: locationError } = await supabase
   .from('quirk_locations')
@@ -42,7 +38,6 @@ if (locationError || !location) {
   return Astro.redirect('/404');
 }
 
-// ✅ Check for active job listings
 const { data: jobs } = await supabase
   .from('jobs')
   .select('id')
@@ -52,7 +47,6 @@ const { data: jobs } = await supabase
 
 const hasJobs = jobs && jobs.length > 0;
 
-// Define tabs
 const tabs = [
   { id: 'about', label: 'About', icon: 'Info' },
   { id: 'local', label: 'Local', icon: 'Building2' },
@@ -63,7 +57,6 @@ const tabs = [
   { id: 'reviews', label: 'Reviews', icon: 'Star' }
 ];
 
-// Generate structured data
 const articleSchema = {
   "@context": "https://schema.org",
   "@type": "AutoDealer",
@@ -89,13 +82,7 @@ const articleSchema = {
   "openingHoursSpecification": [
     {
       "@type": "OpeningHoursSpecification",
-      "dayOfWeek": [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday"
-      ],
+      "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
       "opens": "08:00",
       "closes": "18:00"
     },
@@ -113,23 +100,14 @@ const articleSchema = {
     location.youtube_profile,
     location.gmb
   ].filter(Boolean),
-  "areaServed": {
-    "@type": "State",
-    "name": "Maine"
-  },
+  "areaServed": { "@type": "State", "name": "Maine" },
   "priceRange": "$$",
-  "paymentAccepted": [
-    "Cash",
-    "Credit Card",
-    "Debit Card",
-    "Bank Transfer"
-  ],
+  "paymentAccepted": ["Cash", "Credit Card", "Debit Card", "Bank Transfer"],
   "currenciesAccepted": "USD"
 };
 ---
 
 <Layout title={location.title}>
-  {/* Add structured data */}
   <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
 
   <!-- Hero Section -->
@@ -196,11 +174,6 @@ const articleSchema = {
     </div>
   </div>
 
-  <!-- Business Details -->
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 relative z-10 mb-8">
-    <LocationBizDetails location={location} />
-  </div>
-
   <!-- Location Tabs -->
   <div class="bg-primary border-b border-primary/20 sticky top-0 z-10">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -220,7 +193,7 @@ const articleSchema = {
   <!-- Main Content -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     <div id="about" class="tab-content">
-      <LocationAbout title={location.title} description={location.content_description} />
+      <LocationAbout title={location.title} description={location.content_description} location={location} />
     </div>
 
     <div id="local" class="tab-content hidden">
@@ -250,31 +223,23 @@ const articleSchema = {
 </Layout>
 
 <style>
-  /* Hide scrollbar but keep functionality */
   .hide-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
-  
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
-
-  /* Active tab styles */
   .tab-button.active {
     @apply bg-white/10 text-white;
   }
-
-  /* Smooth transitions */
   .tab-content {
     transition: opacity 0.3s ease-in-out;
   }
-
   .tab-content.hidden {
     display: none;
     opacity: 0;
   }
-
   .tab-content:not(.hidden) {
     display: block;
     opacity: 1;
@@ -282,16 +247,12 @@ const articleSchema = {
 </style>
 
 <script>
-  // Tab functionality
   function setupTabs() {
     const tabButtons = document.querySelectorAll('.tab-button');
     const tabContents = document.querySelectorAll('.tab-content');
-    
-    // Get active tab from URL hash or default to 'about'
     const activeTabId = window.location.hash.slice(1) || 'about';
-    
-    function setActiveTab(tabId: string) {
-      // Update tab buttons
+
+    function setActiveTab(tabId) {
       tabButtons.forEach(button => {
         if (button.getAttribute('data-tab') === tabId) {
           button.classList.add('active');
@@ -299,8 +260,6 @@ const articleSchema = {
           button.classList.remove('active');
         }
       });
-      
-      // Update content visibility
       tabContents.forEach(content => {
         if (content.id === tabId) {
           content.classList.remove('hidden');
@@ -308,31 +267,25 @@ const articleSchema = {
           content.classList.add('hidden');
         }
       });
-      
-      // Update URL hash without scrolling
       const scrollPosition = window.scrollY;
       window.location.hash = tabId;
       window.scrollTo(0, scrollPosition);
     }
-    
-    // Set initial active tab
+
     setActiveTab(activeTabId);
-    
-    // Add click handlers
+
     tabButtons.forEach(button => {
       button.addEventListener('click', () => {
         const tabId = button.getAttribute('data-tab');
         if (tabId) setActiveTab(tabId);
       });
     });
-    
-    // Handle back/forward navigation
+
     window.addEventListener('hashchange', () => {
       const newTabId = window.location.hash.slice(1) || 'about';
       setActiveTab(newTabId);
     });
   }
 
-  // Initialize tabs when the DOM is ready
   document.addEventListener('DOMContentLoaded', setupTabs);
 </script>

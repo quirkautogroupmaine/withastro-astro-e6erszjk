@@ -27,6 +27,14 @@ export default {
       fontFamily: {
         sans: ['Roboto Flex', 'system-ui', 'sans-serif'],
       },
+      aspectRatio: {
+        '16/9': '16 / 9', // ✅ Ensures proper video aspect ratio
+        '4/3': '4 / 3',
+        '1/1': '1 / 1',
+      },
+      spacing: {
+        'video-max': '960px', // ✅ Limits video width for large screens
+      },
       typography: {
         DEFAULT: {
           css: {
@@ -55,18 +63,6 @@ export default {
             ul: { listStyleType: 'disc', paddingLeft: '1.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' },
             ol: { listStyleType: 'decimal', paddingLeft: '1.5rem', marginTop: '0.5rem', marginBottom: '0.5rem' },
             li: { marginBottom: '0.25rem' },
-
-            /* ✅ Custom bullet styling */
-            'ul > li::before': {
-              content: '""',
-              position: 'absolute',
-              left: '0',
-              top: '0.6rem',
-              width: '0.35rem',
-              height: '0.35rem',
-              backgroundColor: '#3b71f7 !important', /* ✅ Forces secondary blue bullets */
-              borderRadius: '50%',
-            },
 
             /* ✅ Modern Blockquote */
             blockquote: {
@@ -171,5 +167,9 @@ export default {
       },
     },
   },
-  plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography')],
+  plugins: [
+    require('@tailwindcss/forms'),
+    require('@tailwindcss/typography'),
+    require('@tailwindcss/aspect-ratio'), // ✅ Ensures YouTube embeds stay responsive
+  ],
 };

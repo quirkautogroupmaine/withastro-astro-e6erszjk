@@ -12,6 +12,7 @@ const url = new URL(Astro.url);
 const locationId = url.searchParams.get('locationId');
 const department = url.searchParams.get('department');
 const city = url.searchParams.get('city');
+const search = url.searchParams.get('search'); // ✅ New keyword search param
 
 // Build base query
 let query = supabase
@@ -25,6 +26,7 @@ let query = supabase
     employment_type,
     application_url,
     content_type_postrank,
+    location,
     quirk_location:quirk_locations(
       id,
       title,
@@ -44,7 +46,10 @@ if (department) {
   query = query.eq('department', department);
 }
 if (city) {
-  query = query.eq('quirk_location.city', city);
+  query = query.eq('location', city);
+}
+if (search) {
+  query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
 }
 
 // Sort by rank
@@ -54,7 +59,8 @@ query = query.order('content_type_postrank', { ascending: true });
 const [
   { data: jobs, error: jobsError },
   { data: departments },
-  { data: locations }
+  { data: locations },
+  { data: cityData }
 ] = await Promise.all([
   query,
   supabase
@@ -65,7 +71,11 @@ const [
   supabase
     .from('quirk_locations')
     .select('id, title, city')
-    .order('title')
+    .order('title'),
+  supabase
+    .from('jobs')
+    .select('location')
+    .eq('is_active', true)
 ]);
 
 if (jobsError) {
@@ -74,13 +84,14 @@ if (jobsError) {
 
 // Extract unique values
 const uniqueDepartments = [...new Set(departments?.map(job => job.department).filter(Boolean))];
-const uniqueCities = [...new Set(locations?.map(loc => loc.city).filter(Boolean))];
+const uniqueCities = [...new Set(cityData?.map(job => job.location).filter(Boolean))];
 
 // Initial filter values
 const initialFilters = { 
   department: department || undefined,
   city: city || undefined,
-  locationId: locationId || undefined
+  locationId: locationId || undefined,
+  search: search || ''
 };
 ---
 

@@ -59,7 +59,7 @@ const hasEmployees = employees && employees.length > 0;
             )}
             
             <h3 class="text-lg font-bold text-primary mb-1">
-              {employee.employee_first_name} {employee.employee_lastname}
+              {(employee.employee_first_name ?? '') + ' ' + (employee.employee_lastname ?? '')}
             </h3>
             
             {employee.employee_job_title && (

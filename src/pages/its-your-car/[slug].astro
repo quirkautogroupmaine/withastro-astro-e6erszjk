@@ -109,7 +109,7 @@ console.log('Featured Image URL:', post.featured_image_url);
             </h1>
 
             {post.content && (
-              <div class="text-white prose prose-invert">
+              <div class="text-white prose prose-invert bg-transparent [&_*]:bg-transparent">
                 <div set:html={post.content} />
               </div>
             )}
